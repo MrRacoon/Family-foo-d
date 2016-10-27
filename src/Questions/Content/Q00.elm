@@ -1,3 +1,6 @@
+module Questions.Content.Q00 exposing (qs)
+
+qs = """
 007: how did dr no die in "dr no"`drowned
 007: how does Bond introduce himself on meeting someone for the first time?`"My name is Bond, James Bond."
 007: How does James Bond like his martinis`shaken not stirred
@@ -3730,3 +3733,4 @@ Acronym Soup: NYM`new york minute
 Acronym Soup: NYP`not your problem
 Acronym Soup: OATUS`on a totally unrelated subject
 Acronym Soup: OAUS`on an unrelated subject
+"""
