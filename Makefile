@@ -3,7 +3,7 @@ DIST_DIR = dist
 ASSETS_DIR = assets
 
 
-build: src lib tar
+build: src lib tar chrome-dist
 
 
 tar:
@@ -20,3 +20,16 @@ build-js:
 
 clean:
 	-rm -rf $(DIST_DIR)
+
+chrome-dist:
+	chromium-browser dist/index.html
+
+firefox-dist:
+	firefox dist/index.html
+
+chrome-dev:
+	chromium-browser localhost:8000
+
+firefox-dev:
+	firefox localhost:8000
+
