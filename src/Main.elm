@@ -1,19 +1,18 @@
 module Main exposing (..)
 
-import Debug exposing (log)
+import Random
+import List exposing (head, drop, length)
 
 import Html exposing (Html, div, button, text, a)
 import Html.Lazy exposing (lazy)
 import Html.App exposing (beginnerProgram)
-import Html.Events exposing (onClick)
 
-import String exposing (split)
-import List exposing (head, drop)
+import Styling exposing (classMain)
+
+import Component.Nav as Nav
 import Intro.Intro as Intro
 import Questions.Component as Question
 import Questions.All exposing (everyQuestion)
-import Component.Nav as Nav
-import Styling exposing (classMain)
 
 type Page = IntroPage | QuestionPage
 
@@ -21,7 +20,8 @@ type Msg  = ShowIntro
           | ShowQuestion
           | TryAnswer String
           | GiveUp
-          | NextQuestion
+          | GenerateNextIndex
+          | RetrieveQuestion
 
 type alias Q =
   { question : String
@@ -29,6 +29,7 @@ type alias Q =
   , revealed : Bool
   }
 
+initQuestion : Q
 initQuestion = Q
   "Are you ready?"
   "yes"
@@ -44,10 +45,16 @@ type alias Model =
   { page     : Page
   , question : Q
   , index    : Int
+  , randGen  : Random.Generator Int
   }
 
 model : Model
-model = Model QuestionPage initQuestion 0
+model = Model
+  QuestionPage
+  initQuestion
+  0
+  (Random.int 0 <| length everyQuestion)
+
 
 update : Msg -> Model -> Model
 update msg model =
@@ -56,11 +63,12 @@ update msg model =
       { model | page = IntroPage }
     ShowQuestion ->
       { model | page = QuestionPage }
-    NextQuestion ->
+    RetrieveQuestion ->
       { model
         | question = pickQuestion everyQuestion (model.index + 1)
         , index    = model.index + 1
         }
+    GenerateNextIndex -> model
     GiveUp ->
       let question = model.question
       in { model | question = { question | revealed = True }}
@@ -70,7 +78,9 @@ update msg model =
         then { model | question = { question | revealed = True }}
         else model
 
-questionView = lazy <| Question.view TryAnswer GiveUp NextQuestion
+
+questionView : Model -> Html Msg
+questionView = lazy <| Question.view TryAnswer GiveUp RetrieveQuestion
 
 navigation : Nav.Navigation Msg
 navigation =
@@ -87,6 +97,7 @@ view model =
         QuestionPage -> questionView model
     ]
 
+main : Program Never
 main = beginnerProgram
   { model  = model
   , view   = view
