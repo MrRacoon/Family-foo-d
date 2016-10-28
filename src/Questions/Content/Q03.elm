@@ -1,3 +1,6 @@
+module Questions.Content.Q03 exposing (..)
+
+qs = """
 ART: In Son of Man (1964) by Rene Magritte, what hides the subjects face`an apple
 Artist: All that she wants`ace of base
 Artist: And do you feel scared/I do/But I won't stop and falter.`howard jones
@@ -3976,3 +3979,4 @@ Astrology : If you were born on 07 February what star sign (Zodiac) would you be
 Astrology: If You Were Born On 07 January What Star Sign Would You Be`Capricorn
 Astrology : If you were born on 07 January what star sign (Zodiac) would you be`capricorn
 Astrology : If you were born on 07 July what star sign (Zodiac) would you be`cancer
+"""
