@@ -12,6 +12,8 @@ import List exposing (head, drop)
 import Intro.Intro as Intro
 import Questions.Component as Question
 import Questions.All exposing (everyQuestion)
+import Component.Nav as Nav
+import Styling exposing (classMain)
 
 type Page = IntroPage | QuestionPage
 
@@ -28,16 +30,15 @@ type alias Q =
   }
 
 initQuestion = Q
-  "who"
-  "me"
+  "Are you ready?"
+  "yes"
   False
 
 pickQuestion : List (List String) -> Int -> Q
 pickQuestion qs ind =
   case head <| drop ind qs of
     Just [q, a] -> Q q a False
-    Nothing -> Q "yarp" "pixie" False
-    _ -> Q "yarp" "pixie" False
+    _ -> Q "No more! :(" "λ" False
 
 type alias Model =
   { page     : Page
@@ -69,21 +70,21 @@ update msg model =
         then { model | question = { question | revealed = True }}
         else model
 
-questionView = Question.view TryAnswer GiveUp NextQuestion
+questionView = lazy <| Question.view TryAnswer GiveUp NextQuestion
+
+navigation : Nav.Navigation Msg
+navigation =
+  [ ( "Home"     , ShowIntro    )
+  , ( "Questions", ShowQuestion )
+  ]
 
 view : Model -> Html Msg
 view model =
-  case model.page of
-    QuestionPage -> app <| lazy questionView <| model
-    _            -> app <| Intro.render model
-
-app page =
-  let buttonStyles =
-    []
-  in div []
-    [ div [onClick ShowIntro] [text "main"]
-    , div [onClick ShowQuestion] [text "trivia"]
-    , page
+  div [classMain]
+    [ Nav.render navigation
+    , case model.page of
+        IntroPage    -> Intro.render model
+        QuestionPage -> questionView model
     ]
 
 main = beginnerProgram
