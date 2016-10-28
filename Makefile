@@ -1,35 +1,40 @@
+NAME = friendlyFoo
 SRC_DIR = src
-DIST_DIR = dist
+MAIN_FILE = Main.elm
+TARGET = $(SRC_DIR)/$(MAIN_FILE)
 ASSETS_DIR = assets
+DIST_DIR = friendlyFoo
+INDEX = $(DIST_DIR)/index.html
 
+PKG_DIR = pkg
+TAR_FILE = $(PKG_DIR)/$(NAME).tar.bz
+MD5_FILE = $(PKG_DIR)/$(NAME).md5
 
-build: src lib tar chrome-dist
+all: build
 
+package: build tar
 
 tar:
-	tar -cvzf app.tar.gz $(DIST_DIR)/*
+	-rm -rf $(PKG_DIR)
+	mkdir -p $(PKG_DIR)
+	tar -cvjf $(TAR_FILE) $(DIST_DIR)
+	md5sum $(TAR_FILE) >> $(MD5_FILE)
+
+build: src lib
 
 lib:
 	cp $(ASSETS_DIR)/* $(DIST_DIR)/
 
 src: clean build-js
 
-
-build-js:
-	elm-make $(SRC_DIR)/main.elm --output=$(DIST_DIR)/app.js
-
 clean:
 	-rm -rf $(DIST_DIR)
+	-rm -rf $(PKG_DIR)
+
+build-js:
+	elm-make $(TARGET) --output=$(DIST_DIR)/app.js
+
+dev: build chrome-dist
 
 chrome-dist:
-	chromium-browser dist/index.html
-
-firefox-dist:
-	firefox dist/index.html
-
-chrome-dev:
-	chromium-browser localhost:8000
-
-firefox-dev:
-	firefox localhost:8000
-
+	chromium-browser $(INDEX)

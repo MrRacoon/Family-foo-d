@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Debug exposing (log)
 
-import Html exposing (Html, div, button, text)
+import Html exposing (Html, div, button, text, a)
 import Html.Lazy exposing (lazy)
 import Html.App exposing (beginnerProgram)
 import Html.Events exposing (onClick)
@@ -52,18 +52,14 @@ update : Msg -> Model -> Model
 update msg model =
   case msg of
     ShowIntro ->
-      { model
-      | page = IntroPage
-      }
+      { model | page = IntroPage }
     ShowQuestion ->
-      { model
-      | page = QuestionPage
-      }
+      { model | page = QuestionPage }
     NextQuestion ->
       { model
-      | question = pickQuestion everyQuestion (model.index + 1)
-      , index    = model.index + 1
-      }
+        | question = pickQuestion everyQuestion (model.index + 1)
+        , index    = model.index + 1
+        }
     GiveUp ->
       let question = model.question
       in { model | question = { question | revealed = True }}
@@ -82,9 +78,11 @@ view model =
     _            -> app <| Intro.render model
 
 app page =
-  div []
-    [ button [onClick ShowIntro] [text "main"]
-    , button [onClick ShowQuestion] [text "trivia"]
+  let buttonStyles =
+    []
+  in div []
+    [ div [onClick ShowIntro] [text "main"]
+    , div [onClick ShowQuestion] [text "trivia"]
     , page
     ]
 

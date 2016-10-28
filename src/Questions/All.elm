@@ -1,12 +1,10 @@
 module Questions.All exposing (everyQuestion)
 
-import List
-import String
+import List exposing (map, concatMap)
+import String exposing (lines, split)
 import Questions.Content.Q00 as Q0
 
-import Debug exposing (log)
+parse = map (split "`") << concatMap lines
 
-everyQuestion = [ Q0.qs ]
-  |> List.map String.lines
-  |> List.concat
-  |> List.map (String.split "`")
+everyQuestion = parse
+  [ Q0.qs ]
