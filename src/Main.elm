@@ -72,23 +72,19 @@ update msg model =
       ({ model | page = QuestionPage }, Cmd.none)
     RetrieveQuestion ->
       { model
-        | question = pickQuestion everyQuestion (model.index + 1)
-        }
-      ! []
+      | question = pickQuestion everyQuestion (model.index + 1) } ! []
     GenerateNextIndex ->
       (model, Random.generate NewIndex questionGen)
     NewIndex ind ->
       { model
-        | index = ind
-        , question = pickQuestion everyQuestion ind
-        }
-      ! []
+      | index = ind
+      , question = pickQuestion everyQuestion ind } ! []
     GiveUp ->
       let question = model.question
       in { model | question = { question | revealed = True }} ! []
     TryAnswer ans ->
       let question = model.question
-      in if ans == model.question.answer
+      in if Question.answersMatch ans question.answer
         then { model | question = { question | revealed = True }} ! []
         else (model, Cmd.none)
 
