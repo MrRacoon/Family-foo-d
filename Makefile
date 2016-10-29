@@ -1,5 +1,5 @@
 NAME = friendlyFoo
-SRC_DIR = src
+SRC_DIR = client
 MAIN_FILE = Main.elm
 TARGET = $(SRC_DIR)/$(MAIN_FILE)
 ASSETS_DIR = assets
