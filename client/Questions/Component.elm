@@ -22,8 +22,7 @@ answersMatch a b = sanatize a == sanatize b
 view try giveUp next model =
   let q = model.question
   in div []
-    [ h4 [] [ text <| toString model.index ]
-    , h1 [] [ text q.question ]
+    [ h1 [] [ text q.question ]
     , h2 []
       [ if q.revealed
         then text q.answer

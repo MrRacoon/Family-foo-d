@@ -1,14 +1,20 @@
-NAME = friendlyFoo
-SRC_DIR = client
-MAIN_FILE = Main.elm
-TARGET = $(SRC_DIR)/$(MAIN_FILE)
-ASSETS_DIR = assets
-DIST_DIR = friendlyFoo
-INDEX = $(DIST_DIR)/index.html
+NAME        = friendlyFoo
+DIST_DIR    = $(NAME)
 
-PKG_DIR = pkg
-TAR_FILE = $(PKG_DIR)/$(NAME).tar.bz
-MD5_FILE = $(PKG_DIR)/$(NAME).md5
+CLIENT_DIR  = client
+TARGET      = $(CLIENT_DIR)/Main.elm
+
+SERVER_DIR  = server
+SERVER_FILE = $(SERVER_DIR)/index.js
+
+ASSETS_DIR  = assets
+INDEX       = $(DIST_DIR)/index.html
+
+PKG_DIR     = pkg
+TAR_FILE    = $(PKG_DIR)/$(NAME).tar.bz
+MD5_FILE    = $(PKG_DIR)/$(NAME).md5
+
+################################################################################
 
 all: build
 
@@ -20,12 +26,18 @@ tar:
 	tar -cvjf $(TAR_FILE) $(DIST_DIR)
 	md5sum $(TAR_FILE) >> $(MD5_FILE)
 
-build: src lib
+dev-server:
+	(cd $(DIST_DIR); node index.js; cd -)
 
-lib:
+build: src-client src-server src-lib
+
+src-server:
+	cp server/index.js $(DIST_DIR)/index.js
+
+src-lib:
 	cp $(ASSETS_DIR)/* $(DIST_DIR)/
 
-src: clean build-js
+src-client: clean build-js
 
 clean:
 	-rm -rf $(DIST_DIR)

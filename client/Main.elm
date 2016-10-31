@@ -1,8 +1,10 @@
 module Main exposing (..)
 
+import Debug exposing (log)
 import Platform.Cmd exposing (Cmd)
 import Platform.Sub exposing (Sub)
 import Cmd.Extra exposing (message)
+import Json.Encode as Encode
 
 import String exposing (toLower, toUpper)
 import List exposing (head, drop, length)
@@ -20,10 +22,9 @@ import Questions.Component as Question
 import Questions.All exposing (everyQuestion)
 
 import Random
+import WebSocket
 
-questionGen = Random.int 0
-  <| (\n -> n - 1)
-  <| length everyQuestion
+socketString = "ws://localhost:8081"
 
 
 type Page = IntroPage | QuestionPage
@@ -34,7 +35,7 @@ type Msg  = ShowIntro
           | GiveUp
           | NewIndex Int
           | GenerateNextIndex
-          | RetrieveQuestion
+          | NewMessage String
 
 type alias Q =
   { question : String
@@ -42,51 +43,65 @@ type alias Q =
   , revealed : Bool
   }
 
-initQuestion : Q
-initQuestion = Q
-  "Are you ready?"
-  "yes"
-  False
+type alias Attempt =
+  { name : String
+  , answer: String
+  }
 
-pickQuestion : List (List String) -> Int -> Q
-pickQuestion qs ind =
-  case head <| drop ind qs of
-    Just [q, a] -> Q (toUpper q) (toLower a) False
-    _ -> Q "No more! :(" "λ" False
+submitAnswer att =
+  let message = Encode.encode 0 <| Encode.object [ ("name", Encode.string att.name) , ("answer", Encode.string att.answer) ]
+  in WebSocket.send socketString message
+
+initQuestion : Q
+initQuestion = Q "Are you ready?" "yes" False
 
 type alias Model =
   { page     : Page
   , question : Q
-  , index    : Int
   }
 
 init : Model
-init = Model QuestionPage initQuestion 0
+init = Model
+  QuestionPage
+  initQuestion
+
+pickQuestion : Int -> List (List String) -> Q
+pickQuestion ind qs =
+  case head <| drop ind qs of
+    Just [q, a] -> Q (toUpper q) (toLower a) False
+    _ -> initQuestion
 
 -- update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    ShowIntro ->
-      ({ model | page = IntroPage }, Cmd.none)
-    ShowQuestion ->
-      ({ model | page = QuestionPage }, Cmd.none)
-    RetrieveQuestion ->
-      { model
-      | question = pickQuestion everyQuestion (model.index + 1) } ! []
+    -- Page navigation buttons
+    ShowIntro    -> ({ model | page = IntroPage }, Cmd.none)
+    ShowQuestion -> ({ model | page = QuestionPage }, Cmd.none)
+
+    -- Random Question Gathering
     GenerateNextIndex ->
-      (model, Random.generate NewIndex questionGen)
+      let questionGen = Random.int 0 <| (length everyQuestion - 1)
+      in (model, Random.generate NewIndex questionGen)
     NewIndex ind ->
-      { model
-      | index = ind
-      , question = pickQuestion everyQuestion ind } ! []
-    GiveUp ->
-      let question = model.question
-      in { model | question = { question | revealed = True }} ! []
+      { model | question = pickQuestion ind everyQuestion } ! []
+
+    -- Attempt to answer the question
     TryAnswer ans ->
       let question = model.question
       in if Question.answersMatch ans question.answer
         then { model | question = { question | revealed = True }} ! []
-        else (model, Cmd.none)
+        -- else (model, WebSocket.send socketString ans)
+        else (model, submitAnswer (Attempt "erik" ans))
+
+    -- The User has had enough
+    GiveUp ->
+      let question = model.question
+      in { model | question = { question | revealed = True }} ! []
+
+    -- Sockets
+    NewMessage str ->
+      case str of
+        _ -> (model, Cmd.none)
 
 
 questionView : Model -> Html Msg
@@ -108,10 +123,13 @@ view model =
         QuestionPage -> questionView model
     ]
 
+subscriptions model =
+  WebSocket.listen socketString NewMessage
+
 main : Program Never
 main = program
   { init   = (init, Cmd.none)
   , update = update
   , view   = view
-  , subscriptions = always Sub.none
+  , subscriptions = subscriptions
   }
