@@ -1,7 +1,6 @@
 module Intro.Intro exposing (..)
 
 import Html exposing (div, h1, h3, p, text)
-import Html.Attributes exposing (class)
 import Styling exposing (classIntro)
 
 tip = "hot, steamy foo"

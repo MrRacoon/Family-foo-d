@@ -21,3 +21,4 @@ navigationButton = style
   ]
 
 classIntro = class ""
+classWinner = class ""

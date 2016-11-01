@@ -19,25 +19,15 @@ charMask c = if ignored c then c else '*'
 sanatize str = toLower <| filter (not << ignored) str
 answersMatch a b = sanatize a == sanatize b
 
-view try giveUp next model =
+view try model =
   let q = model.question
   in div []
     [ h1 [] [ text q.question ]
     , h2 []
-      [ if q.revealed
-        then text q.answer
-        else text <| map charMask q.answer ]
+      [ text <| map charMask q.answer ]
     , div []
-      [ if q.revealed
-        then button
-          [ onClick next ]
-          [ text "Next Question" ]
-        else div []
-          [ input
-            [ type' "text"
-            , placeholder "answer"
-            , onInput try
-            ] [ ]
-          , button
-            [ onClick giveUp ]
-            [ text "Give Up" ] ] ] ]
+      [ div []
+        [ input [ type' "text" , placeholder "answer" , onInput try ] [ ]
+        ]
+      ]
+    ]

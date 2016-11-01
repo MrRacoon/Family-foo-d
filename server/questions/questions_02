@@ -1,6 +1,3 @@
-module Questions.Content.Q02 exposing (..)
-
-qs = """
 Anatomy & Medical: Phobias: Ice Or Frost`Pagophobia
 Anatomy & Medical: Phobias: Ideas`Ideophobia
 Anatomy & Medical: Phobias: Injections`Trypanophobia
@@ -3944,4 +3941,3 @@ Artificial barrier or obstacle on a motor racing course`chicane
 Artificial rain was first used near _______, New Hampshire, in 1947 to fight a forest fire`concord
 Artillery NCO below the rank of sergeant`bombadier
 ART: In 1504 Michaelangelo completed the sculptureDavid which other Renaissance artist cast a bronze David in 1433`donatello
-"""
