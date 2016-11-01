@@ -20,12 +20,12 @@ import Component.Nav as Nav
 import Intro.Intro as Intro
 import Questions.Component as Question
 import Questions.All exposing (everyQuestion)
+import Messaging as M
 
 import Random
 import WebSocket
 
 socketString = "ws://localhost:8081"
-
 
 type Page = IntroPage | QuestionPage
 
@@ -42,15 +42,6 @@ type alias Q =
   , answer : String
   , revealed : Bool
   }
-
-type alias Attempt =
-  { name : String
-  , answer: String
-  }
-
-submitAnswer att =
-  let message = Encode.encode 0 <| Encode.object [ ("name", Encode.string att.name) , ("answer", Encode.string att.answer) ]
-  in WebSocket.send socketString message
 
 initQuestion : Q
 initQuestion = Q "Are you ready?" "yes" False
@@ -89,9 +80,10 @@ update msg model =
     TryAnswer ans ->
       let question = model.question
       in if Question.answersMatch ans question.answer
-        then { model | question = { question | revealed = True }} ! []
-        -- else (model, WebSocket.send socketString ans)
-        else (model, submitAnswer (Attempt "erik" ans))
+        then
+          { model | question = { question | revealed = True }} ! []
+        else
+          (model, WebSocket.send socketString <| M.submit "erik" ans)
 
     -- The User has had enough
     GiveUp ->
@@ -100,9 +92,15 @@ update msg model =
 
     -- Sockets
     NewMessage str ->
-      case str of
-        _ -> (model, Cmd.none)
-
+      case M.parse (log "msg" str) of
+        Ok (M.NewQuestion q a) ->
+          ({ model | question = Q q a False }, Cmd.none)
+        Ok (M.NoAction) ->
+          (model, Cmd.none)
+        Err err ->
+          (model, Cmd.none)
+        _ ->
+          (model, Cmd.none)
 
 questionView : Model -> Html Msg
 questionView = lazy <| Question.view TryAnswer GiveUp GenerateNextIndex
@@ -112,7 +110,6 @@ navigation =
   [ ( "Home"     , ShowIntro    )
   , ( "Questions", ShowQuestion )
   ]
-
 
 view : Model -> Html Msg
 view model =

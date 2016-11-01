@@ -26,7 +26,7 @@ function newQuestion () {
   };
   console.log(current);
   sendToAll(JSON.stringify({
-    type: "NewQuestion",
+    type: "new",
     payload: current
   }))
 }
@@ -45,5 +45,8 @@ wss.on('connection', function connection(ws) {
   ws.on('disconnect', function disconnecting() {
     clients = clients.filter(function notClient(c) { return c !== ws; });
   })
-  ws.send(JSON.stringify(current));
+  ws.send(JSON.stringify({
+    type: "new",
+    payload: current
+  }));
 });
