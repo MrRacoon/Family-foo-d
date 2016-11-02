@@ -32,7 +32,7 @@ dev-server:
 build: src-client src-server src-lib
 
 src-server:
-	cp server/index.js $(DIST_DIR)/index.js
+	cp -R server/* $(DIST_DIR)/
 
 src-lib:
 	cp $(ASSETS_DIR)/* $(DIST_DIR)/

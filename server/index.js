@@ -1,61 +1,67 @@
-const server = require('restify').createServer();
-const bunyan = require('bunyan');
-const log = bunyan.createLogger({name: 'friendly-foo'});
+const q = require('./questions.js').getQuestion;
+const WebSocketServer = require('ws').Server;
+const wss = new WebSocketServer({ port: 8081 });
 
-const QUESTION = 'question';
-const GUESS = 'guess';
-const GUESSED = 'guessed';
+let score = {};
+let acceptingAnswers = true;
+let current = {
+  question: "Ready?!!?",
+  answer: "yeeee",
+};
 
-const current = { question: "numero ono", answer: "cher" };
-let acceptingGuesses = true;
-
-var WebSocketServer = require('ws').Server
-  , wss = new WebSocketServer({ port: 8081 });
+// =============================================================================
 
 wss.on('connection', function connection(ws) {
-  console.log('connected');
   ws.on('message', function incoming(message) {
-    const msg = JSON.parse(message);
-    if (acceptingGuesses && isCorrectAnsswer(current, guess)) {
-      log.info('%s guessed it right', guess.name);
+    const attempt = JSON.parse(message);
+    console.log(attempt);
+    if (acceptingAnswers && isMatch(attempt)) {
       acceptingGuesses = false;
-      io.emit(GUESSED, { player: guess.name, answer: current.answer });
-      setTimeout(newQuestion, 5000);
-    }
-    console.log('received: %s', message);
-
-  });
-  ws.send('something');
-});
-
-wss.on('connection', function (socket) {
-  log.info('new client');
-  socket.emit(QUESTION, current);
-  socket.on(GUESS, function (guess) {
-    log.trace('guess from %s is %s', guess.name, guess.answer);
-    if (acceptingGuesses && isCorrectAnsswer(current, guess)) {
-      log.info('%s guessed it right', guess.name);
-      acceptingGuesses = false;
-      io.emit(GUESSED, { player: guess.name, answer: current.answer });
+      score[attempt.name] = (score[attempt.name] || 0) + 1;
+      questionAnswered(attempt.name);
       setTimeout(newQuestion, 5000);
     }
   });
+  ws.send(currentQuestion());
 });
 
-server.listen(8080, function () {
-  log.info('listening at %s', server.url)
-})
+// =============================================================================
 
-function isCorrectAnswer(c, g) {
-  return c.answer === g.answer;
+function isMatch(attempt) {
+  return attempt.answer === current.answer;
 }
 
-function newQuestion() {
-  current = {
-    question : ('another question ' + new Date().toString()),
-    answer: yup,
-  };
-  log.info('new question %s / %s', current.question, current.answer);
-  io.emit(QUESTION, current);
-  acceptingGuesses = true;
+function sendToAll(str) {
+  wss.clients.forEach(function each(client) {
+    client.send(str);
+  });
+}
+
+// =============================================================================
+
+function currentQuestion() {
+  return JSON.stringify({
+    type: "new",
+    payload: current,
+  });
+}
+
+function makeNewAnswered(n) {
+  return JSON.stringify({
+    type: "answered",
+    payload: { name: n },
+  });
+}
+
+// =============================================================================
+
+function newQuestion () {
+  current = q();
+  sendToAll(currentQuestion());
+  acceptingAnswers = true;
+  console.log(current);
+}
+
+function questionAnswered(n) {
+  sendToAll(makeNewAnswered(n));
 }
