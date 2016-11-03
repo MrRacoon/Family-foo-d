@@ -7,5 +7,5 @@ render model =
   div [classWinner]
     [ h3 [] [ text "We have a winner!" ]
     , h1 [] [ text model.winner ]
-    , p [] [ text ("Answer: " ++ model.question.answer)]
+    , p [] [ text ("Answer: " ++ model.answer)]
     ]

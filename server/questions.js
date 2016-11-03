@@ -9,13 +9,16 @@ function question(str) {
   };
 }
 
-const qs = R.map(question, R.split('\n', fs.readFileSync(__dirname + '/questions/questions_00', {
-  encoding: 'utf-8'
-})));
+const makeQs = R.compose(R.map(question), R.split('\n'))
+
+const qs = makeQs(
+  fs.readFileSync(__dirname + '/questions/questions_00', {
+    encoding: 'utf-8'
+  })
+);
 
 function getQuestion() {
-  const r = Math.floor(Math.random() * qs.length);
-  return qs[r];
+  return qs[Math.floor(Math.random() * qs.length)];
 }
 
 module.exports = {

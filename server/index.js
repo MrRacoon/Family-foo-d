@@ -2,6 +2,8 @@ const q = require('./questions.js').getQuestion;
 const WebSocketServer = require('ws').Server;
 const wss = new WebSocketServer({ port: 8081 });
 
+// =============================================================================
+
 let score = {};
 let acceptingAnswers = true;
 let current = {
@@ -15,7 +17,7 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(message) {
     const attempt = JSON.parse(message);
     console.log(attempt);
-    if (acceptingAnswers && isMatch(attempt)) {
+    if (acceptingAnswers && answersMatch(current.answer, attempt.answer)) {
       acceptingGuesses = false;
       score[attempt.name] = (score[attempt.name] || 0) + 1;
       questionAnswered(attempt.name);
@@ -27,17 +29,40 @@ wss.on('connection', function connection(ws) {
 
 // =============================================================================
 
-function isMatch(attempt) {
-  return attempt.answer === current.answer;
+const ignoreChars =
+  [ ' ', /\./, ',', '>', '<', '!', '@', '#', '$', '%', '^', '&', /\*/, /\(/, /\)/
+  , /\[/, /\]/, '{', '}', '-', /\+/, '=', '_', ':', ';', /\?/, '/', '|', '`', '~'
+  , /\\/
+  ];
+
+function rmChar(str, char) {
+  return str.replace(new RegExp(char, 'gi'), '');
 }
 
-function sendToAll(str) {
-  wss.clients.forEach(function each(client) {
-    client.send(str);
-  });
+function rmChars(str) {
+  return ignoreChars.reduce(rmChar, str)
+}
+
+function ignored(char) {
+  return ignoreChars.indexOf(char) > -1;
+}
+
+function sanatize(str) {
+  return rmChars(str).toLowerCase();
+}
+
+function answersMatch(a, b) {
+  return sanatize(a) === sanatize(b);
 }
 
 // =============================================================================
+
+function maskedQuestion() {
+  return JSON.stringify({
+    type: "new",
+    payload: current,
+  });
+}
 
 function currentQuestion() {
   return JSON.stringify({
@@ -65,3 +90,11 @@ function newQuestion () {
 function questionAnswered(n) {
   sendToAll(makeNewAnswered(n));
 }
+
+function sendToAll(str) {
+  wss.clients.forEach(function each(client) {
+    client.send(str);
+  });
+}
+
+// =============================================================================
