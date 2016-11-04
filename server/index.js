@@ -1,6 +1,11 @@
+'use strict';
+
+const PORT = 8081;
 const q = require('./questions.js').getQuestion;
 const WebSocketServer = require('ws').Server;
-const wss = new WebSocketServer({ port: 8081 });
+const wss = new WebSocketServer({ port: PORT });
+
+console.log('starting websockets server on %s', PORT);
 
 // =============================================================================
 
@@ -18,9 +23,10 @@ wss.on('connection', function connection(ws) {
     const attempt = JSON.parse(message);
     console.log(attempt);
     if (acceptingAnswers && answersMatch(current.answer, attempt.answer)) {
-      acceptingGuesses = false;
+      console.log('ANSWERED: %s', attempt.name);
+      acceptingAnswers = false;
       score[attempt.name] = (score[attempt.name] || 0) + 1;
-      questionAnswered(attempt.name);
+      questionAnswered(attempt);
       setTimeout(newQuestion, 5000);
     }
   });
@@ -29,30 +35,35 @@ wss.on('connection', function connection(ws) {
 
 // =============================================================================
 
-const ignoreChars =
-  [ ' ', /\./, ',', '>', '<', '!', '@', '#', '$', '%', '^', '&', /\*/, /\(/, /\)/
-  , /\[/, /\]/, '{', '}', '-', /\+/, '=', '_', ':', ';', /\?/, '/', '|', '`', '~'
-  , /\\/
-  ];
-
-function rmChar(str, char) {
-  return str.replace(new RegExp(char, 'gi'), '');
+// isAlpha : Char -> Bool
+function isAlpha (c) {
+  return /[a-z]/ig.test(c)
 }
 
-function rmChars(str) {
-  return ignoreChars.reduce(rmChar, str)
+// charMask : Char -> Char
+function charMask (c) {
+  return isAlpha(c) ? '*' : c;
 }
 
-function ignored(char) {
-  return ignoreChars.indexOf(char) > -1;
+// keepAllAlpha : String -> String
+function keepAllAlpha (str) {
+  return str.split('').filter(isAlpha).join('');
 }
 
-function sanatize(str) {
-  return rmChars(str).toLowerCase();
+// sanatize : String -> String
+function sanatize (str) {
+  return keepAllAlpha(str).toLowerCase();
 }
 
-function answersMatch(a, b) {
-  return sanatize(a) === sanatize(b);
+// mask : String -> String
+function mask (str) {
+  return str.split('').map(charMask).join('');
+}
+
+// Answers get some help by discounting anything other than alphaCharacters
+// answersMatch : String -> String -> Bool
+function answersMatch (str1, str2) {
+  return sanatize(str1) === sanatize(str2);
 }
 
 // =============================================================================
@@ -67,14 +78,14 @@ function maskedQuestion() {
 function currentQuestion() {
   return JSON.stringify({
     type: "new",
-    payload: current,
+    payload: { question: current.question, mask: mask(current.answer) },
   });
 }
 
-function makeNewAnswered(n) {
+function makeNewAnswered(n, a, s) {
   return JSON.stringify({
     type: "answered",
-    payload: { name: n },
+    payload: { name: n, answer: a, score: s },
   });
 }
 
@@ -87,8 +98,8 @@ function newQuestion () {
   console.log(current);
 }
 
-function questionAnswered(n) {
-  sendToAll(makeNewAnswered(n));
+function questionAnswered(mess) {
+  sendToAll(makeNewAnswered(mess.name, mess.answer, score[mess.name]));
 }
 
 function sendToAll(str) {

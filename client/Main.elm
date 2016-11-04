@@ -1,16 +1,16 @@
 module Main exposing (..)
 
-import Debug exposing (log)
+import Debug        exposing (log)
 import Platform.Cmd exposing (Cmd)
-import Cmd.Extra exposing (message)
-import Html exposing (Html, div)
-import Html.Lazy exposing (lazy)
-import Html.App exposing (program)
-import Styling exposing (classMain)
+import Cmd.Extra    exposing (message)
+import Html         exposing (Html, div)
+import Html.Lazy    exposing (lazy)
+import Html.App     exposing (program)
+import Styling      exposing (classMain)
 
-import Component.Nav as Nav
-import Intro.Intro as Intro
-import Winner.Winner as Winner
+import Component.Nav     as Nav
+import Intro.Intro       as Intro
+import Winner.Winner     as Winner
 import Question.Question as Question
 
 import Messaging as M
@@ -31,14 +31,15 @@ type Msg
   | NewMessage String
 
 type alias Model =
-  { page     : Page
-  , question : String
-  , answer   : String
-  , winner   : String
+  { page       : Page
+  , question   : String
+  , mask       : String
+  , lastAnswer : String
+  , winner     : String
   }
 
 init : Model
-init = Model QuestionPage "" "" ""
+init = Model QuestionPage "" "" "" ""
 
 -- update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -58,10 +59,10 @@ update msg model =
     -- Sockets
     NewMessage str ->
       case M.parse (log "msg" str) of
-        Ok (M.NewQuestion q) ->
-          ({ model | question = q }, message ShowQuestion)
-        Ok (M.Answered name) ->
-          ({ model | winner = name }, message ShowWinner)
+        Ok (M.NewQuestion q m) ->
+          { model | question = q, mask = m } ! [message ShowQuestion]
+        Ok (M.Answered n l) ->
+          { model | winner = n, lastAnswer = l } ! [message ShowWinner]
         Ok (M.NoAction) ->
           (model, Cmd.none)
         Err err ->
@@ -69,7 +70,7 @@ update msg model =
           in (model, Cmd.none)
 
 questionView : Model -> Html Msg
-questionView = lazy <| Question.view TryAnswer
+questionView = Question.view TryAnswer
 
 navigation : Nav.Navigation Msg
 navigation =
@@ -83,9 +84,9 @@ view model =
   div [classMain]
     [ Nav.render navigation
     , case model.page of
-        IntroPage    -> Intro.render model
-        QuestionPage -> questionView model
-        WinnerPage   -> Winner.render model
+        IntroPage    -> lazy Intro.render model
+        QuestionPage -> lazy questionView model
+        WinnerPage   -> lazy Winner.render model
     ]
 
 subscriptions model =

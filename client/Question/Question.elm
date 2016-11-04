@@ -28,6 +28,7 @@ answersMatch a b = sanatize a == sanatize b
 view try model =
   div []
     [ h1 [] [ text model.question ]
+    , h4 [] [ text model.mask ]
     , div []
       [ div []
         [ input [ type' "text" , placeholder "answer" , onInput try ] [ ]
