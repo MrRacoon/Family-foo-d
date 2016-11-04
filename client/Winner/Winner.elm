@@ -1,9 +1,9 @@
-module Winner.Winner exposing (..)
+module Winner.Winner exposing (view)
 
 import Html exposing (div, h1, h3, p, text)
 import Styling exposing (classWinner)
 
-render model =
+view model =
   div [ classWinner ]
     [ h3 [] [ text "We have a winner!" ]
     , h1 [] [ text model.winner ]

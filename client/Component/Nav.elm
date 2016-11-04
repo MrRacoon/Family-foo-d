@@ -1,4 +1,4 @@
-module Component.Nav exposing (..)
+module Component.Nav exposing (view)
 
 import List exposing (map)
 import Html exposing (Html, div, button, text)
@@ -13,7 +13,7 @@ makeButton : (String, a) -> Html a
 makeButton (t, e) =
   button [Style.classNavButton, Style.navigationButton, onClick e] [text t]
 
-render : Navigation a -> Html a
-render config =
+view : Navigation a -> Html a
+view config =
   div [Style.navigation]
     <| map makeButton config

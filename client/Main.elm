@@ -16,7 +16,7 @@ import Question.Question as Question
 import Messaging as M
 import WebSocket
 
-socketString = "ws://localhost:8081"
+socketString = "ws://192.168.1.150:8081"
 
 type Page
   = IntroPage
@@ -30,6 +30,7 @@ type Msg
   | NickChange String
   | TryAnswer String
   | NewMessage String
+  | VoteForNew
 
 type alias Model =
   { page       : Page
@@ -38,25 +39,30 @@ type alias Model =
   , mask       : String
   , lastAnswer : String
   , winner     : String
+  , votes      : List String
+  , voted      : Bool
   }
 
 init : Model
-init = Model QuestionPage "nobody" "" "" "" ""
+init = Model QuestionPage "nobody" "" "" "" "" [] False
 
 -- update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     -- Page navigation buttons
-    ShowIntro    ->
+    ShowIntro ->
       ({ model | page = IntroPage }, Cmd.none)
     ShowQuestion ->
       ({ model | page = QuestionPage }, Cmd.none)
-    ShowWinner   ->
+    ShowWinner ->
       ({ model | page = WinnerPage }, Cmd.none)
 
     -- Attempt to answer the question
     TryAnswer ans ->
       (model, WebSocket.send socketString <| M.submit model.nick ans)
+
+    VoteForNew ->
+      { model | voted = True } ! [WebSocket.send socketString <| M.vote model.nick]
 
     NickChange n ->
       ({ model | nick = n }, Cmd.none)
@@ -65,10 +71,17 @@ update msg model =
     NewMessage str ->
       case M.parse (log "msg" str) of
         Ok (M.NewQuestion q m) ->
-          { model | question = q, mask = m } ! [message ShowQuestion]
+          { model
+          | question = q
+          , mask = m
+          , votes = []
+          , voted = False
+          } ! [message ShowQuestion]
         Ok (M.Answered n l) ->
           { model | winner = n, lastAnswer = l } ! [message ShowWinner]
-        Ok (M.NoAction) ->
+        Ok (M.Votes ps) ->
+          { model | votes = ps } ! []
+        Ok _ ->
           (model, Cmd.none)
         Err err ->
           let e = log "error" err
@@ -77,15 +90,15 @@ update msg model =
 view : Model -> Html Msg
 view model =
   div [classMain]
-    [ Nav.render
+    [ Nav.view
       [ ( "Home"        , ShowIntro    )
       , ( "Questions"   , ShowQuestion )
       , ( "Last Winner" , ShowWinner )
       ]
     , case model.page of
-        IntroPage    -> lazy (Intro.render NickChange) model
-        QuestionPage -> lazy (Question.view TryAnswer) model
-        WinnerPage   -> lazy Winner.render model
+        IntroPage    -> lazy (Intro.view NickChange) model
+        QuestionPage -> lazy (Question.view TryAnswer VoteForNew) model
+        WinnerPage   -> lazy Winner.view model
     ]
 
 subscriptions model =

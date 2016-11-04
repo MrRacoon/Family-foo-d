@@ -10,6 +10,7 @@ console.log('starting websockets server on %s', PORT);
 // =============================================================================
 
 let score = {};
+let votes = [];
 let acceptingAnswers = true;
 let current = {
   question: "Ready?!!?",
@@ -18,16 +19,33 @@ let current = {
 
 // =============================================================================
 
+let conId = 1;
+
 wss.on('connection', function connection(ws) {
+  ws.id = conId++;
+  console.log('CON: %s', ws.id)
+  conId = conId++;
   ws.on('message', function incoming(message) {
-    const attempt = JSON.parse(message);
-    console.log(attempt);
-    if (acceptingAnswers && answersMatch(current.answer, attempt.answer)) {
-      console.log('ANSWERED: %s', attempt.name);
-      acceptingAnswers = false;
-      score[attempt.name] = (score[attempt.name] || 0) + 1;
-      questionAnswered(attempt);
-      setTimeout(newQuestion, 5000);
+    console.log('MSG: %s', message);
+    const msg = JSON.parse(message);
+    if (msg.vote && votes.indexOf(ws.id) === -1) {
+      votes.push(ws.id)
+      ws.name = msg.vote;
+      const threshold = Math.floor(wss.clients.length / 2)
+      if (threshold < votes.length) {
+        newQuestion();
+      } else {
+        updateVoteCount();
+      }
+    }
+    if (msg.name && msg.answer) {
+      if (acceptingAnswers && answersMatch(current.answer, msg.answer)) {
+        console.log('ANS: %s', msg.name);
+        acceptingAnswers = false;
+        score[msg.name] = (score[msg.name] || 0) + 1;
+        questionAnswered(msg);
+        setTimeout(newQuestion, 5000);
+      }
     }
   });
   ws.send(currentQuestion());
@@ -68,10 +86,10 @@ function answersMatch (str1, str2) {
 
 // =============================================================================
 
-function maskedQuestion() {
-  return JSON.stringify({
-    type: "new",
-    payload: current,
+function sendToAll(str) {
+  console.log('S2A: %s', str)
+  wss.clients.forEach(function each(client) {
+    client.send(str);
   });
 }
 
@@ -89,23 +107,38 @@ function makeNewAnswered(n, a, s) {
   });
 }
 
+function voteCount() {
+  return JSON.stringify({
+    type: "votes",
+    payload: {
+      count: votes.length,
+      participants: wss.clients
+        .filter(function onlyNamedAndVoted(c) {
+          return !!c.name && votes.indexOf(c.id) > -1;
+        })
+        .map(function getName(c) {
+          return c.name;
+        })
+    },
+  });
+}
+
 // =============================================================================
 
 function newQuestion () {
   current = q();
+  votes = [];
   sendToAll(currentQuestion());
   acceptingAnswers = true;
-  console.log(current);
+  console.log('NEW: %s', JSON.stringify(current));
 }
 
 function questionAnswered(mess) {
   sendToAll(makeNewAnswered(mess.name, mess.answer, score[mess.name]));
 }
 
-function sendToAll(str) {
-  wss.clients.forEach(function each(client) {
-    client.send(str);
-  });
+function updateVoteCount() {
+  sendToAll(voteCount());
 }
 
 // =============================================================================

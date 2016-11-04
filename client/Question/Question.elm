@@ -1,31 +1,13 @@
-module Question.Question exposing (..)
+module Question.Question exposing (view)
 
-import String exposing (map, toLower, filter)
-import Set exposing (Set, fromList, member)
-import Html exposing (Html, div, h1, h2, h4, text, button, input)
+import List exposing (map)
+import Html exposing (Html, div, h1, h4, text, button, input, ul, li)
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (placeholder, type')
 
-ignoreChars : Set Char
-ignoreChars = fromList
-  [ ' ', '.', ',', '>', '<', '!', '@', '#', '$' , '%', '^', '&', '*', '(', ')'
-  , '[', ']', '{', '}', '-', '+', '=' ,'_', ':', ';', '?', '/', '|', '`', '~'
-  , '\\'
-  ]
+listName n = li [] [ text n ]
 
-ignored : Char -> Bool
-ignored = flip member ignoreChars
-
-charMask : Char -> Char
-charMask c = if ignored c then c else '*'
-
-sanatize : String -> String
-sanatize str = toLower <| filter (not << ignored) str
-
-answersMatch : String -> String -> Bool
-answersMatch a b = sanatize a == sanatize b
-
-view try model =
+view try vote model =
   div []
     [ h1 [] [ text model.question ]
     , h4 [] [ text model.mask ]
@@ -33,5 +15,15 @@ view try model =
       [ div []
         [ input [ type' "text" , placeholder "answer" , onInput try ] [ ]
         ]
+      , div []
+        (if model.voted
+          then
+            [ h4 [] [ text "Voted: "]
+            , ul [] ( map listName model.votes )
+            ]
+          else
+            [ button [ onClick vote ] [ text "vote for new question" ]
+            ]
+        )
       ]
     ]
