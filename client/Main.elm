@@ -27,11 +27,13 @@ type Msg
   = ShowIntro
   | ShowQuestion
   | ShowWinner
+  | NickChange String
   | TryAnswer String
   | NewMessage String
 
 type alias Model =
   { page       : Page
+  , nick       : String
   , question   : String
   , mask       : String
   , lastAnswer : String
@@ -39,7 +41,7 @@ type alias Model =
   }
 
 init : Model
-init = Model QuestionPage "" "" "" ""
+init = Model QuestionPage "nobody" "" "" "" ""
 
 -- update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -54,7 +56,10 @@ update msg model =
 
     -- Attempt to answer the question
     TryAnswer ans ->
-      (model, WebSocket.send socketString <| M.submit "erik" ans)
+      (model, WebSocket.send socketString <| M.submit model.nick ans)
+
+    NickChange n ->
+      ({ model | nick = n }, Cmd.none)
 
     -- Sockets
     NewMessage str ->
@@ -69,23 +74,17 @@ update msg model =
           let e = log "error" err
           in (model, Cmd.none)
 
-questionView : Model -> Html Msg
-questionView = Question.view TryAnswer
-
-navigation : Nav.Navigation Msg
-navigation =
-  [ ( "Home"        , ShowIntro    )
-  , ( "Questions"   , ShowQuestion )
-  , ( "Last Winner" , ShowWinner )
-  ]
-
 view : Model -> Html Msg
 view model =
   div [classMain]
-    [ Nav.render navigation
+    [ Nav.render
+      [ ( "Home"        , ShowIntro    )
+      , ( "Questions"   , ShowQuestion )
+      , ( "Last Winner" , ShowWinner )
+      ]
     , case model.page of
-        IntroPage    -> lazy Intro.render model
-        QuestionPage -> lazy questionView model
+        IntroPage    -> lazy (Intro.render NickChange) model
+        QuestionPage -> lazy (Question.view TryAnswer) model
         WinnerPage   -> lazy Winner.render model
     ]
 
