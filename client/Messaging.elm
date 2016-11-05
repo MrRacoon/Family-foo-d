@@ -1,4 +1,4 @@
-module Messaging exposing (parse, submit, vote, Msg(..))
+module Messaging exposing (parse, submit, vote, getPoints, Msg(..))
 import Json.Encode as E
 import Json.Decode as D
 
@@ -11,6 +11,7 @@ type Msg
   | Answered String String
   | Votes (List String)
   | Unknown String
+  | Points Int
   | NoAction
 
 decodeNewQuestion =
@@ -30,6 +31,11 @@ decodeVotes =
     Votes
     (D.at ["payload", "participants"] (D.list D.string))
 
+decodePoints =
+  D.object1
+    Points
+    (D.at ["payload", "points"] D.int)
+
 -- parse : String -> Result String Action
 parse message =
   let t = D.decodeString decodeType message
@@ -37,10 +43,14 @@ parse message =
     Ok "new"      -> D.decodeString decodeNewQuestion message
     Ok "answered" -> D.decodeString decodeAnswered message
     Ok "votes"    -> D.decodeString decodeVotes message
+    Ok "points"   -> D.decodeString decodePoints message
     _             -> Ok <| Unknown message
 
 submit name answer
   = E.encode 0 <|E.object [("name", E.string name), ("answer", E.string answer)]
 
-vote name
-  = E.encode 0 <|E.object [("vote", E.string name)]
+vote nick
+  = E.encode 0 <|E.object [("vote", E.string nick)]
+
+getPoints nick
+  = E.encode 0 <|E.object [("points", E.string nick)]

@@ -47,6 +47,10 @@ wss.on('connection', function connection(ws) {
         setTimeout(newQuestion, 5000);
       }
     }
+    if (msg.points) {
+      console.log('PTS: %s %s', ws.id, msg.points)
+      sendToOne(ws, pointsOf(msg.points))
+    }
   });
   ws.on('close', function diconnected(code, message) {
     console.log('DIS: %s %s', code, message);
@@ -89,6 +93,11 @@ function answersMatch (str1, str2) {
 
 // =============================================================================
 
+function sendToOne(sock, msg) {
+  console.log('SND: %s %s', sock.id, msg)
+  sock.send(msg);
+}
+
 function sendToAll(str) {
   console.log('S2A: %s', str)
   wss.clients.forEach(function each(client) {
@@ -126,6 +135,15 @@ function voteCount() {
   });
 }
 
+function pointsOf(n) {
+  return JSON.stringify({
+    type: "points",
+    payload: {
+      points: score[n] || 0,
+    },
+  });
+}
+
 // =============================================================================
 
 function newQuestion () {
@@ -143,5 +161,3 @@ function questionAnswered(mess) {
 function updateVoteCount() {
   sendToAll(voteCount());
 }
-
-// =============================================================================

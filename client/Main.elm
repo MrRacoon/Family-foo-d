@@ -27,6 +27,8 @@ type Msg
   | NickChange String
   | TryAnswer String
   | NewMessage String
+  | GetPoints
+
   | VoteForNew
 
 type alias Model =
@@ -38,17 +40,18 @@ type alias Model =
   , winner     : String
   , votes      : List String
   , voted      : Bool
+  , points     : Int
   }
 
 init : Model
-init = Model QuestionPage "nobody" "" "" "" "" [] False
+init = Model QuestionPage "nobody" "" "" "" "" [] False 0
 
 -- update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     -- Page navigation buttons
     ShowMyScore ->
-      ({ model | page = MyScorePage }, Cmd.none)
+      { model | page = MyScorePage } ! [message GetPoints]
     ShowQuestion ->
       ({ model | page = QuestionPage }, Cmd.none)
     ShowWinner ->
@@ -64,6 +67,9 @@ update msg model =
     NickChange n ->
       ({ model | nick = n }, Cmd.none)
 
+    GetPoints ->
+      model ! [WebSocket.send socketString <| M.getPoints model.nick]
+
     -- Sockets
     NewMessage str ->
       case M.parse (log "msg" str) of
@@ -76,8 +82,11 @@ update msg model =
           } ! [message ShowQuestion]
         Ok (M.Answered n l) ->
           { model | winner = n, lastAnswer = l } ! [message ShowWinner]
+
         Ok (M.Votes ps) ->
           { model | votes = ps } ! []
+        Ok (M.Points pts) ->
+          { model | points = pts } ! []
         Ok _ ->
           (model, Cmd.none)
         Err err ->
@@ -88,7 +97,7 @@ view : Model -> Html Msg
 view model =
   div [classMain]
     [ nav
-      [ ( "Home"        , ShowMyScore    )
+      [ ( "MyScore"     , ShowMyScore    )
       , ( "Questions"   , ShowQuestion )
       , ( "Last Winner" , ShowWinner )
       ]
