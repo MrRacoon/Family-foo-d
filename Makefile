@@ -14,6 +14,9 @@ PKG_DIR     = pkg
 TAR_FILE    = $(PKG_DIR)/$(NAME).tar.bz
 MD5_FILE    = $(PKG_DIR)/$(NAME).md5
 
+NODE_MODULES = node_modules
+ELM_STUFF    = elm-stuff
+
 ################################################################################
 
 all: build
@@ -42,9 +45,15 @@ src-client: clean build-js
 clean:
 	-rm -rf $(DIST_DIR)
 	-rm -rf $(PKG_DIR)
+	-rm -rf $(NODE_MODULES)
+	-rm -rf $(ELM_STUFF)
 
-build-js:
+build-js: build-deps
 	elm-make $(TARGET) --output=$(DIST_DIR)/app.js
+
+build-deps:
+	npm install
+	elm-make --yes
 
 dev: build chrome-dist
 
