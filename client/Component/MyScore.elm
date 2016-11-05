@@ -1,4 +1,4 @@
-module Intro.Intro exposing (view)
+module Component.MyScore exposing (view)
 
 import Html exposing (div, h1, h3, h4, p, input, text)
 import Html.Attributes exposing (placeholder)

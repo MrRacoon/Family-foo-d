@@ -1,25 +1,25 @@
 'use strict';
 
 const PORT = 8081;
+const HOST = '127.0.0.1';
 const q = require('./questions.js').getQuestion;
 const WebSocketServer = require('ws').Server;
 const wss = new WebSocketServer({ port: PORT });
 
-console.log('starting websockets server on %s', PORT);
+console.log('starting websockets server at %s on %s', HOST, PORT);
 
 // =============================================================================
 
 let score = {};
 let votes = [];
 let acceptingAnswers = true;
+let conId = 1;
 let current = {
   question: "Ready?!!?",
   answer: "yeeee",
 };
 
 // =============================================================================
-
-let conId = 1;
 
 wss.on('connection', function connection(ws) {
   ws.id = conId++;
@@ -47,6 +47,9 @@ wss.on('connection', function connection(ws) {
         setTimeout(newQuestion, 5000);
       }
     }
+  });
+  ws.on('close', function diconnected(code, message) {
+    console.log('DIS: %s %s', code, message);
   });
   ws.send(currentQuestion());
 });

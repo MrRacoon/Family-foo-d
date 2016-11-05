@@ -1,4 +1,4 @@
-module Question.Question exposing (view)
+module Component.Question exposing (view)
 
 import List exposing (map)
 import Html exposing (Html, div, h1, h4, text, button, input, ul, li)

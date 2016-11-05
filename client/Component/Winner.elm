@@ -1,4 +1,4 @@
-module Winner.Winner exposing (view)
+module Component.Winner exposing (view)
 
 import Html exposing (div, h1, h3, p, text)
 import Styling exposing (classWinner)
