@@ -14,10 +14,9 @@ let score = {};
 let votes = [];
 let acceptingAnswers = true;
 let conId = 1;
-let current = {
-  question: "Ready?!!?",
-  answer: "yeeee",
-};
+let current;
+
+newQuestion();
 
 // =============================================================================
 

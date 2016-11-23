@@ -13,7 +13,7 @@ import Component.All exposing ( nav, myScore, question, winner )
 import Messaging as M
 import WebSocket
 
-socketString = "ws://192.168.1.150:8081"
+socketString = "ws://127.0.0.1:8081"
 
 type Page
   = MyScorePage

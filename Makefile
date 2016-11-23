@@ -1,5 +1,6 @@
 NAME        = friendlyFoo
 DIST_DIR    = $(NAME)
+INDEX       = $(DIST_DIR)/index.html
 
 CLIENT_DIR  = client
 TARGET      = $(CLIENT_DIR)/Main.elm
@@ -8,7 +9,6 @@ SERVER_DIR  = server
 SERVER_FILE = $(SERVER_DIR)/index.js
 
 ASSETS_DIR  = assets
-INDEX       = $(DIST_DIR)/index.html
 
 PKG_DIR     = pkg
 TAR_FILE    = $(PKG_DIR)/$(NAME).tar.bz
@@ -55,7 +55,11 @@ build-deps:
 	npm install
 	elm-make --yes
 
-dev: build chrome-dist
+dev: build client-dist server-dist
 
-chrome-dist:
-	chromium-browser $(INDEX)
+client-dist:
+	firefox $(INDEX)
+
+server-dist:
+	node $(SERVER_FILE)
+
